@@ -1,5 +1,5 @@
 {
-  "name": "tg-whale-token-validate",
+  "name": "tg-token-validator",
   "module": "src/index.ts",
   "type": "module",
   "devDependencies": {
