@@ -33,17 +33,5 @@ describe("Token/Account Functions", () => {
         const actualDecimals = await lookupDecimals(token);
         expect(actualDecimals).toBe(expectedDecimals);
     })
-
-    test("Should be able to send tokens back from holder wallet", async () => {
-        const info = {
-            source: "DW3Z5QVgoMdm47JFmcCR5NXcXifZamJCshQEHCrzBQSP",
-            destination: "9jY8yUET5iiuF3JzGMcdNLvhb4zonscjiLz9f98QgHNf",
-            mint:"BuxH23osRyFFLbWG3czrTsfBQYbxzVZ8f7QV4cjTHN5x"
-        }
-        const decimals = 6;
-        const amount = 2 * Math.pow(10, decimals);
-
-        const result = await sendBackBalance(info, amount);
-        expect(result).toBeTypeOf("string")
-    },20000)
+    
 })

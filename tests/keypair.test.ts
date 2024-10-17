@@ -12,14 +12,14 @@ describe("KeyPair Functions", () => {
         
         const keypair = await generateKeypairToFile(token);
         const wallets = fs.readdirSync('wallets');
-
+        
 
         expect(keypair).toHaveProperty('wallet');
-        expect(keypair).toHaveProperty('token_account');
+        expect(keypair).toHaveProperty('tokenAccount');
         
-        expect(wallets).toContain(`${keypair.wallet}.json`);
+        expect(wallets).toContain(`${token}.json`);
         
-        fs.rmSync(`wallets/${keypair.wallet}.json`);
+        fs.rmSync(`wallets/${token}.json`);
     });
     
     test("Should not generate a keypair if the token is invalid", async () => {
@@ -34,12 +34,13 @@ describe("KeyPair Functions", () => {
     test("Should be able to load a keypair after generating.", async () => {
         const token = "Dogg6xWSgkF8KbsHkTWD3Et4J9a8VBLZjrASURXGiLe1"
         
-        const {wallet} = await generateKeypairToFile(token);
+        await generateKeypairToFile(token);
         
-        const kp = loadKeypairFromFile(wallet)
+        const [kp,tokenAccount] = loadKeypairFromFile(token)
         expect(kp).toBeInstanceOf(Keypair);
+        expect(tokenAccount).toBeTypeOf('string');
         
-        fs.rmSync(`wallets/${wallet}.json`);
+        fs.rmSync(`wallets/${token}.json`);
 
     });
 })

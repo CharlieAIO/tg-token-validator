@@ -121,7 +121,7 @@ export async function lookupDecimals(token: string): Promise<number|null> {
 export async function sendBackBalance(transfer_info: any,returnAmount:number):Promise<string|null> {
     try {
 
-        const {source, destination, mint} = transfer_info;
+        const {source, mint} = transfer_info;
 
         const [senderKeypair] = loadKeypairFromFile(mint);
         const recipientPublicKey = new PublicKey(source);
