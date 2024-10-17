@@ -71,7 +71,7 @@ export async function confirmTransfer(transfer_info:any): Promise<[boolean,boole
     }
     const {source, destination, signature, amount, blockTime,mint, chatId} = transfer_info;
     
-    const res = await pool.query(`SELECT * FROM transfers WHERE source=$1 AND destination=$2 AND amount=$3 AND confirmed=false;`, [source,destination,amount]);
+    const res = await pool.query(`SELECT * FROM transfers WHERE source=$1 AND destination=$2 AND amount=$3 AND chatId=$4 AND confirmed=false;`, [source,destination,amount,chatId]);
     
     let returnFunds = false
     
