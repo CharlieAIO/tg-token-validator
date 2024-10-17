@@ -158,15 +158,21 @@ bot.onText(/\/validate (\S+)/, async (msg, match:any) => {
             disable_web_page_preview: true
         });
 
-        const askForSignature = async () => {
+        const askForSignature = async (chatId: number, userId: number) => {
             const signatureRegex = /^[A-Za-z0-9]{86,88}$/;
             const urlRegex = /\/tx\/([A-Za-z0-9]{86,88})/;
             
-            bot.once('message', async (response) => {
+            bot.once('message', async (response:any) => {
+                if (response.chat.id !== chatId || response?.from?.id !== userId) {
+                    // Wait for the correct user to reply
+                    askForSignature(chatId, userId);
+                    return;
+                }
+                
                 let signature = response.text;
                 if (!signature) {
                     // await bot.sendMessage(response.chat.id, "No signature provided. Please send the correct transaction signature.");
-                    askForSignature();
+                    askForSignature(chatId, userId);
                     return;
                 }
 
@@ -177,7 +183,7 @@ bot.onText(/\/validate (\S+)/, async (msg, match:any) => {
 
                 if (!signature || !signatureRegex.test(signature)) {
                     // await bot.sendMessage(response.chat.id, "Invalid signature format. Please send the correct transaction signature.");
-                    askForSignature();
+                    askForSignature(chatId, userId);
                     return;
                 }
 
@@ -191,8 +197,12 @@ bot.onText(/\/validate (\S+)/, async (msg, match:any) => {
                 return
             });
         };
-
-        askForSignature();
+        
+        if (!msg?.from?.id) {
+            await bot.sendMessage(chatId, "Error. Please try again.");
+            return
+        }
+        askForSignature(chatId, msg.from.id);
     } catch {
         await bot.sendMessage(msg.chat.id, "Error validating wallet")
     }

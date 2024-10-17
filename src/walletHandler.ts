@@ -25,11 +25,11 @@ export async function watchSignature(signature: string, chatId: number,invite_li
     }
 
     let txDetails = await connection.getParsedTransaction(signature,{maxSupportedTransactionVersion:0});
-    let attempts = 3;
+    let attempts = 6;
     if (!txDetails) {
         while (!txDetails && attempts > 0) {
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            txDetails = await connection.getParsedTransaction(signature, {maxSupportedTransactionVersion:0});
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            txDetails = await connection.getParsedTransaction(signature, {maxSupportedTransactionVersion:undefined});
             attempts--;
         }
     }
