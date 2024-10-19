@@ -5,27 +5,29 @@ import {
     Keypair,
     type ParsedAccountData,
     PublicKey,
-    type RpcResponseAndContext,
+    sendAndConfirmTransaction,
+    SystemProgram,
     Transaction
 } from "@solana/web3.js";
-import {
-    AccountLayout,
-    createTransferInstruction,
-    getAssociatedTokenAddress,
-    getMint,
-} from "@solana/spl-token";
+import {AccountLayout, getAssociatedTokenAddress, getMint,} from "@solana/spl-token";
 
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000;
 export const connection = new Connection(process.env.SOL_HTTPS as string);
 
-export function loadKeypairFromFile(wallet:string): [Keypair,string] {
-    const keypairFile = JSON.parse(fs.readFileSync(`wallets/${wallet}.json`).toString());
+export function deleteKeypairFile(chatId:number): void {
+    fs.rmSync(`wallets/${chatId}.json`);
+}
+
+export function loadKeypairFromFile(chatId:number): [Keypair,string] {
+    const keypairFile = JSON.parse(fs.readFileSync(`wallets/${chatId}.json`).toString());
     const secret = keypairFile.secretKey;
     const secretKey = Uint8Array.from(secret);
     return [Keypair.fromSecretKey(secretKey), keypairFile.tokenAccount];
 }
 
-export async function generateKeypairToFile(token:string): Promise<{
+export async function generateKeypairToFile(token:string, chatId:number): Promise<{
     wallet: string,
     tokenAccount: string
 }> {
@@ -36,7 +38,7 @@ export async function generateKeypairToFile(token:string): Promise<{
     } catch {
         throw new Error("Invalid token address");
     }
-    fs.writeFileSync(`wallets/${token}.json`, JSON.stringify({
+    fs.writeFileSync(`wallets/${chatId}.json`, JSON.stringify({
         secretKey: Array.from(keypair.secretKey),
         publicKey: keypair.publicKey.toBase58(),
         tokenAccount: token_account.toBase58()
@@ -118,38 +120,62 @@ export async function lookupDecimals(token: string): Promise<number|null> {
     }
 }
 
-export async function sendBackBalance(transfer_info: any,returnAmount:number):Promise<string|null> {
-    try {
+export async function sendBackBalance(transfer_info: any): Promise<string | null> {
+    let retries = 0;
 
-        const {source, mint} = transfer_info;
+    while (retries < MAX_RETRIES) {
+        try {
+            const { source, chatId } = transfer_info;
+            const [senderKeypair] = loadKeypairFromFile(chatId);
+            const sourcePK = new PublicKey(source);
 
-        const [senderKeypair] = loadKeypairFromFile(mint);
-        const recipientPublicKey = new PublicKey(source);
-        const tokenMintPublicKey = new PublicKey(mint);
+            const senderBalance = await connection.getBalance(senderKeypair.publicKey);
 
-        const senderTokenAddress = await getAssociatedTokenAddress(tokenMintPublicKey, senderKeypair.publicKey);
-        const recipientTokenAddress = await getAssociatedTokenAddress(tokenMintPublicKey, recipientPublicKey);
+            const rentExemptionAmount = await connection.getMinimumBalanceForRentExemption(0);
 
-        const transferInstruction = createTransferInstruction(
-            senderTokenAddress,
-            recipientTokenAddress,
-            senderKeypair.publicKey,
-            returnAmount
-        );
-        
+            const { feeCalculator } = await connection.getRecentBlockhash();
+            const estimatedFee = feeCalculator.lamportsPerSignature;
 
-        const transaction = new Transaction().add(transferInstruction);
+            const maxTransferAmount = senderBalance - rentExemptionAmount - estimatedFee;
 
-        const { blockhash } = await connection.getRecentBlockhash("recent");
-        transaction.recentBlockhash = blockhash;
-        transaction.feePayer = senderKeypair.publicKey;
+            if (maxTransferAmount <= 0) {
+                return null;
+            }
+            
+            const transferInstruction = SystemProgram.transfer({
+                fromPubkey: senderKeypair.publicKey,
+                toPubkey: sourcePK,
+                lamports: maxTransferAmount
+            });
 
-        const signature = await connection.sendTransaction(transaction, [senderKeypair]);
-        await connection.confirmTransaction(signature);
+            const transaction = new Transaction().add(transferInstruction);
 
-        return signature
-    } catch (e) {
-        console.error("Error sending tokens back:", e);
-        return null
+            const { blockhash } = await connection.getLatestBlockhash();
+            transaction.recentBlockhash = blockhash;
+            transaction.feePayer = senderKeypair.publicKey;
+
+            return await sendAndConfirmTransaction(
+                connection,
+                transaction,
+                [senderKeypair],
+                {
+                    maxRetries: 5,
+                    skipPreflight: true
+                }
+            );
+        } catch (e) {
+            console.error(`Error sending tokens back (attempt ${retries + 1}):`, e);
+
+            retries++;
+            if (retries < MAX_RETRIES) {
+                console.log(`Retrying in ${RETRY_DELAY / 1000} seconds...`);
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+            } else {
+                console.error("Max retries reached. Transaction failed.");
+                return null;
+            }
+        }
     }
+
+    return null;
 }

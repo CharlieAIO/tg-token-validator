@@ -41,7 +41,7 @@ async function createTransfersTable() {
         mint VARCHAR(44),
         source VARCHAR(44),
         destination VARCHAR(44),
-        amount NUMERIC(8, 2),
+        amount BIGINT,
         confirmed BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (destination, mint, amount)
@@ -69,19 +69,22 @@ export async function confirmTransfer(transfer_info:any): Promise<[boolean,boole
     if (!transfer_info.source || !transfer_info.destination || !transfer_info.amount) {
         return [false,false]
     }
-    const {source, destination, signature, amount, blockTime,mint, chatId} = transfer_info;
+    const {source, destination, signature, amount, blockTime, chatId} = transfer_info;
     
-    const res = await pool.query(`SELECT * FROM transfers WHERE source=$1 AND destination=$2 AND amount=$3 AND chatId=$4 AND confirmed=false;`, [source,destination,amount,chatId]);
+    const res = await pool.query(`SELECT * FROM transfers WHERE destination=$1 AND amount=$2 AND chatId=$3 AND confirmed=false;`, [destination,amount,chatId]);
     
     let returnFunds = false
+    
+    console.log(res.rows)
+    console.log(source, destination,amount)
     
     
     if (res.rows.length > 0)  {
         const blockTimeTimestamp = new Date(blockTime * 1000);
         if (!(blockTimeTimestamp <= res.rows[0].created_at)) {
             
-            if (parseFloat(res.rows[0].amount) === parseFloat(amount)) {
-                await pool.query(`UPDATE transfers SET confirmed=TRUE, signature=$1 WHERE mint=$2 AND destination=$3 AND amount=$4`, [signature, mint, destination, amount]);
+            if (Number(res.rows[0].amount) === Number(amount)) {
+                await pool.query(`UPDATE transfers SET confirmed=TRUE, signature=$1, source=$2 WHERE destination=$3 AND amount=$4`, [signature, source, destination, amount]);
                 return [true,true]
             }else {
                 returnFunds = true
