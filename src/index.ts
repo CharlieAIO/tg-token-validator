@@ -86,6 +86,13 @@ bot.on('callback_query', async (callbackQuery) => {
 
 
         const chatId = msg?.chat.id;
+        
+        const chatMember = await bot.getChatMember(ENV.CHAT_ID as string, chatId)
+        
+        if (chatMember.status === "member" || chatMember.status === "administrator" || chatMember.status === "creator") {
+            await bot.sendMessage(chatId, "You are already have access. Ending validation process.");
+            return;
+        }
 
         if (validationStatus.has(chatId)) {
             await bot.sendMessage(chatId, "You are already in the middle of a validation process. Please complete it before starting a new one.");
