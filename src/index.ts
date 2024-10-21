@@ -95,7 +95,7 @@ bot.on('callback_query', async (callbackQuery) => {
 
 
         // let sendAmount = Math.random() * 0.19 + 0.01;
-        let sendAmount = 0.10;
+        let sendAmount = 0.01;
         sendAmount = Math.round(sendAmount * 100) / 100;
 
         const lamports = Math.floor(sendAmount * LAMPORTS_PER_SOL);
