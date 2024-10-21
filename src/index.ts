@@ -101,8 +101,8 @@ bot.on('callback_query', async (callbackQuery) => {
         const lamports = Math.floor(sendAmount * LAMPORTS_PER_SOL);
         const walletData = await generateKeypairToFile(ENV.TOKEN_ADDRESS, chatId);
 
-        let message = `Please send ${sendAmount.toFixed(2)} *SOL* to *${walletData.wallet}*`
-    
+        let message = `Please send ${sendAmount.toFixed(2)} *SOL* to \`${walletData.wallet}\``;
+        
         const result = await pool.query(`INSERT INTO "transfers" (chatId,mint,destination,amount) VALUES ($1,$2,$3,$4)`, [
             chatId,
             ENV.TOKEN_ADDRESS,
@@ -118,7 +118,7 @@ bot.on('callback_query', async (callbackQuery) => {
 
         await bot.sendMessage(chatId, message, {
             parse_mode: "Markdown",
-            disable_web_page_preview: true
+            disable_web_page_preview: true,
         });
         await watchWallet(walletData.wallet, ENV, chatId);
         validationStatus.delete(chatId);
