@@ -79,6 +79,7 @@ Press the button below to begin the validation process.`;
 
 bot.on('callback_query', async (callbackQuery) => {
     const action = callbackQuery.data;
+    const userID = callbackQuery.from.id;
     const msg = callbackQuery.message;
     try {
         if (!msg) return;
@@ -87,9 +88,9 @@ bot.on('callback_query', async (callbackQuery) => {
 
         const chatId = msg?.chat.id;
         
-        if (!msg.from?.id) return
+        if (!userID) return
         
-        const chatMember = await bot.getChatMember(ENV.CHAT_ID as string, msg.from.id)
+        const chatMember = await bot.getChatMember(ENV.CHAT_ID as string, userID)
         console.log(chatMember)
         
         if (chatMember.status === "member" || chatMember.status === "administrator" || chatMember.status === "creator") {
