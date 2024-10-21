@@ -4,7 +4,7 @@ import {bot} from "./index.ts";
 import {PublicKey} from "@solana/web3.js";
 
 const success_message = (invite:string) => `*Access to the Whale Club has been granted!*\nYou can join the channel [*here*](${invite}) (INVITE WILL EXPIRE IN 1 HOUR)`;
-const failed_message = (amount:string,chatName:string) => `Sorry you need ${amount} tokens to access the ${chatName} chat. Your tokens will be sent back;`;
+const failed_message = (amount:string,chatName:string) => `Sorry you need ${amount} tokens to access the ${chatName} chat. Your tokens will be sent back.`;
 
 export async function watchWallet(wallet: string, ENV:any, chatId: number) {
     let signatures = await connection.getSignaturesForAddress(new PublicKey(wallet));
@@ -53,7 +53,8 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                     chatId
                 };
 
-                const holdings = await getTokenHoldings(transfer_info.destination, ENV.TOKEN_ADDRESS);
+                const holdings = await getTokenHoldings(transfer_info.source, ENV.TOKEN_ADDRESS);
+                
                 const tokens_required_remaining = (ENV.TOTAL_SUPPLY * ENV.REQUIRED_HOLDINGS_PERCENT) / 100 - holdings;
                 const has_holdings = tokens_required_remaining <= 0;
 
