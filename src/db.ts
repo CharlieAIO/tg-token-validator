@@ -65,9 +65,9 @@ export async function getValidatorById(id: number) {
     return res.rows[0]
 }
 
-export async function confirmTransfer(transfer_info:any): Promise<[boolean,boolean]> {
+export async function confirmTransfer(transfer_info:any): Promise<[boolean,boolean,boolean]> {
     if (!transfer_info.source || !transfer_info.destination || !transfer_info.amount) {
-        return [false,false]
+        return [false,false,false]
     }
     const {source, destination, signature, amount, blockTime, chatId} = transfer_info;
     const isUnique = await ensureUniqueAddress(source);
@@ -75,8 +75,6 @@ export async function confirmTransfer(transfer_info:any): Promise<[boolean,boole
     
     let returnFunds = false
     
-    console.log(res.rows)
-    console.log(source, destination,amount)
     
     
     if (res.rows.length > 0)  {
@@ -86,9 +84,9 @@ export async function confirmTransfer(transfer_info:any): Promise<[boolean,boole
             if (Number(res.rows[0].amount) === Number(amount)) {
                 await pool.query(`UPDATE transfers SET confirmed=TRUE, signature=$1, source=$2 WHERE destination=$3 AND amount=$4`, [signature, source, destination, amount]);
                 if (!isUnique) {
-                    return [false,true]
+                    return [true,true,false]
                 }
-                return [true,true]
+                return [true,true,true]
             }else {
                 returnFunds = true
             }
@@ -97,7 +95,7 @@ export async function confirmTransfer(transfer_info:any): Promise<[boolean,boole
     }
     
     await pool.query(`DELETE FROM transfers WHERE chatid=$1 AND confirmed=FALSE`, [chatId]);
-    return [false,returnFunds]
+    return [false,returnFunds,false]
 }
 
 

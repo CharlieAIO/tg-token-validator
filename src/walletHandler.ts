@@ -58,9 +58,14 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                 const tokens_required_remaining = (ENV.TOTAL_SUPPLY * ENV.REQUIRED_HOLDINGS_PERCENT) / 100 - holdings;
                 const has_holdings = tokens_required_remaining <= 0;
 
-                const [confirmed,returnFunds] = await confirmTransfer(transfer_info)
-                if (!confirmed || !has_holdings) {
-                    await bot.sendMessage(chatId, returnFunds?failed_message(tokens_required_remaining.toFixed(2), ENV.CHAT_NAME):"Access Denied.")
+                const [confirmed,returnFunds, isUniqueWallet] = await confirmTransfer(transfer_info)
+                if (!confirmed || !has_holdings || !isUniqueWallet) {
+                    if (!isUniqueWallet) {
+                        await bot.sendMessage(chatId, "Wallet belongs to another user")
+                    } else {
+                        await bot.sendMessage(chatId, returnFunds?failed_message(tokens_required_remaining.toFixed(2), ENV.CHAT_NAME):"Access Denied.")
+                    }
+                    
                 } else if (has_holdings){
                     const oneHourFromNow = new Date(Date.now() + 3600000);
                     try {
