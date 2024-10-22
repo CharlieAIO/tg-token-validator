@@ -57,7 +57,7 @@ Always verify you are using the correct Telegram handle, and never send tokens o
 *Here’s how it works:*
 1️⃣ Make sure you have at least ${hold_amount} ${ENV.TOKEN_SYMBOL} tokens in your whale wallet.
 2️⃣ Click the start button below to recieve your unique wallet address for this verification.
-3️⃣ Send 0.1 SOL to this unique wallet address from your whale wallet.
+3️⃣ Send 0.01 SOL to this unique wallet address from your whale wallet.
 
 Ready to prove your whale status? 🌊✨
 
