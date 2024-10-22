@@ -36,8 +36,8 @@ export async function connect(retries = 5, delayMs = 2000) {
 async function createTransfersTable() {
     await pool.query(`CREATE TABLE IF NOT EXISTS "transfers" (
         signature BYTEA DEFAULT NULL,
-        validatorId INT DEFAULT NULL,
         chatId NUMERIC DEFAULT NULL,
+        userId NUMERIC DEFAULT NULL,
         mint VARCHAR(44),
         source VARCHAR(44),
         destination VARCHAR(44),

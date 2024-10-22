@@ -1,6 +1,6 @@
 import TelegramBot from "node-telegram-bot-api"
 import {
-    generateKeypairToFile,
+    generateKeypairToFile, getTokenHoldings,
 } from "./utils.ts";
 import { connect,pool} from "./db.ts";
 import {watchWallet} from "./walletHandler.ts";
@@ -84,14 +84,11 @@ bot.on('callback_query', async (callbackQuery) => {
     try {
         if (!msg) return;
         if (action !== 'start_validation') return
-
-
         const chatId = msg?.chat.id;
         
         if (!userID) return
         
         const chatMember = await bot.getChatMember(ENV.CHAT_ID as string, userID)
-        console.log(chatMember)
         
         if (chatMember.status === "member" || chatMember.status === "administrator" || chatMember.status === "creator") {
             await bot.sendMessage(chatId, "You are already have access. Ending validation process.");
@@ -114,8 +111,9 @@ bot.on('callback_query', async (callbackQuery) => {
 
         let message = `Please send ${sendAmount.toFixed(2)} *SOL* to \`${walletData.wallet}\``;
         
-        const result = await pool.query(`INSERT INTO "transfers" (chatId,mint,destination,amount) VALUES ($1,$2,$3,$4)`, [
+        const result = await pool.query(`INSERT INTO "transfers" (chatId,userId,mint,destination,amount) VALUES ($1,$2,$3,$4,$5)`, [
             chatId,
+            userID,
             ENV.TOKEN_ADDRESS,
             walletData.wallet,
             lamports
@@ -131,7 +129,7 @@ bot.on('callback_query', async (callbackQuery) => {
             parse_mode: "Markdown",
             disable_web_page_preview: true,
         });
-        await watchWallet(walletData.wallet, ENV, chatId);
+        await watchWallet(walletData.wallet, ENV, chatId, userID);
         validationStatus.delete(chatId);
         
     } catch(e) {
@@ -140,3 +138,30 @@ bot.on('callback_query', async (callbackQuery) => {
     }
 });
 
+
+
+// Cleanup
+(async () => {
+    const INTERVAL_PERIOD = 1000 * 60 * 60 * 1; // 1 hour
+    setInterval(async () => {
+        const { rows } = await pool.query(`SELECT userId,source,mint FROM transfers WHERE confirmed=TRUE AND mint=$1`, [ENV.TOKEN_ADDRESS]);
+        for (const row of rows) {
+            try {
+                const { userid, source } = row;
+
+                const holdings = await getTokenHoldings(source, ENV.TOKEN_ADDRESS);
+                const tokens_required_remaining = (ENV.TOTAL_SUPPLY * ENV.REQUIRED_HOLDINGS_PERCENT) / 100 - holdings;
+                const has_holdings = tokens_required_remaining <= 0;
+                if (!has_holdings) {
+                    await bot.banChatMember(ENV.CHAT_ID as unknown as number,userid);
+                    
+                    await pool.query(`DELETE FROM transfers WHERE userId=$1`, [userid]);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        
+        }
+    }, INTERVAL_PERIOD);
+    
+})();

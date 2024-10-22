@@ -6,7 +6,7 @@ import {PublicKey} from "@solana/web3.js";
 const success_message = (invite:string) => `*Access to the Whale Club has been granted!*\nYou can join the channel [*here*](${invite}) (INVITE WILL EXPIRE IN 1 HOUR)`;
 const failed_message = (amount:string,chatName:string) => `Sorry you need ${amount} tokens to access the ${chatName} chat. Your tokens will be sent back.`;
 
-export async function watchWallet(wallet: string, ENV:any, chatId: number) {
+export async function watchWallet(wallet: string, ENV:any, chatId: number, userId:number) {
     let signatures = await connection.getSignaturesForAddress(new PublicKey(wallet));
     
     if (!signatures.length) {
@@ -32,11 +32,11 @@ export async function watchWallet(wallet: string, ENV:any, chatId: number) {
         return
     }
     
-    await processTransaction(txDetails, signature, ENV, chatId)
+    await processTransaction(txDetails, signature, ENV, chatId, userId)
 
 }
 
-async function processTransaction(txDetails: any, signature:string, ENV:any, chatId: number) {
+async function processTransaction(txDetails: any, signature:string, ENV:any, chatId: number, userId:number) {
     try {
         const blockTime = txDetails
         for (const instruction of txDetails.transaction.message.instructions) {
@@ -69,6 +69,7 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                 } else if (has_holdings){
                     const oneHourFromNow = new Date(Date.now() + 3600000);
                     try {
+                        await bot.unbanChatMember(ENV.CHAT_ID, userId, {only_if_banned:true})
                         const chatInvite = await bot.createChatInviteLink(ENV.CHAT_ID, {
                             member_limit: 1,
                             expire_date: oneHourFromNow.getTime()
