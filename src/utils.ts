@@ -74,25 +74,6 @@ async function getTokenAccount(walletAddress: string, tokenMintAddress: string):
     }
 }
 
-export async function getTokenAccountOwner(tokenAccountAddress: string): Promise<string|null> {
-    const tokenAccountPublicKey = new PublicKey(tokenAccountAddress);
-
-    try {
-        const accountInfo = await connection.getAccountInfo(tokenAccountPublicKey);
-        if (accountInfo === null) {
-            return null
-        }
-
-        // @ts-ignore
-        const parsedAccountInfo = AccountLayout.decode(accountInfo.data);
-        const ownerPublicKey = new PublicKey(parsedAccountInfo.owner);
-
-        return ownerPublicKey.toBase58();
-    } catch (e) {
-        return null;
-    }
-}
-
 export async function getTokenHoldings(walletAddress:string, tokenMintAddress:string):Promise<number> {
     let tokenAccounts = await getTokenAccount(walletAddress, tokenMintAddress);
     if (!tokenAccounts) {

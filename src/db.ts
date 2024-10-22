@@ -70,7 +70,7 @@ export async function confirmTransfer(transfer_info:any): Promise<[boolean,boole
         return [false,false]
     }
     const {source, destination, signature, amount, blockTime, chatId} = transfer_info;
-    
+    const isUnique = await ensureUniqueAddress(source);
     const res = await pool.query(`SELECT * FROM transfers WHERE destination=$1 AND amount=$2 AND chatId=$3 AND confirmed=false;`, [destination,amount,chatId]);
     
     let returnFunds = false
@@ -85,6 +85,9 @@ export async function confirmTransfer(transfer_info:any): Promise<[boolean,boole
             
             if (Number(res.rows[0].amount) === Number(amount)) {
                 await pool.query(`UPDATE transfers SET confirmed=TRUE, signature=$1, source=$2 WHERE destination=$3 AND amount=$4`, [signature, source, destination, amount]);
+                if (!isUnique) {
+                    return [false,true]
+                }
                 return [true,true]
             }else {
                 returnFunds = true
@@ -98,8 +101,8 @@ export async function confirmTransfer(transfer_info:any): Promise<[boolean,boole
 }
 
 
-export async function checkAmountDoesntExists(mint:string, amount:number) {
-    const res = await pool.query(`SELECT * FROM transfers WHERE mint=$1 AND amount=$2`, [mint, amount]);
+export async function ensureUniqueAddress(source:string) {
+    const res = await pool.query(`SELECT * FROM transfers WHERE source=$1`, [source]);
     return res.rows.length === 0;
     
 }
