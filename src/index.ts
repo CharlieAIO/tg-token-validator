@@ -2,7 +2,7 @@ import TelegramBot from "node-telegram-bot-api"
 import {
     generateKeypairToFile, getTokenHoldings,
 } from "./utils.ts";
-import { connect,pool} from "./db.ts";
+import { connect,pool } from "./db.ts";
 import {watchWallet} from "./walletHandler.ts";
 import {LAMPORTS_PER_SOL} from "@solana/web3.js";
 
@@ -28,6 +28,7 @@ const ENV = {
     CHAT_ID: process.env.CHAT_ID,
     TOTAL_SUPPLY: Number(process.env.TOTAL_SUPPLY),
     REQUIRED_HOLDINGS_PERCENT: Number(process.env.REQUIRED_HOLDINGS_PERCENT),
+    USER_EXCLUDE: process.env.USER_EXCLUDE?.split(',').map(Number),
 }
 type EnvKey = keyof typeof ENV;
 (Object.keys(ENV) as EnvKey[]).forEach(key => {
@@ -76,6 +77,7 @@ Press the button below to begin the validation process.`;
         },
     });
 })
+
 
 bot.on('callback_query', async (callbackQuery) => {
     const action = callbackQuery.data;
@@ -148,6 +150,7 @@ bot.on('callback_query', async (callbackQuery) => {
         for (const row of rows) {
             try {
                 const { userid, source } = row;
+                if (ENV.USER_EXCLUDE?.includes(Number(userid))) continue;
 
                 const holdings = await getTokenHoldings(source, ENV.TOKEN_ADDRESS);
                 const tokens_required_remaining = (ENV.TOTAL_SUPPLY * ENV.REQUIRED_HOLDINGS_PERCENT) / 100 - holdings;

@@ -1,4 +1,4 @@
-import {connection, deleteKeypairFile, getTokenHoldings, sendBackBalance} from "./utils.ts";
+import {checkStakedBalance, connection, deleteKeypairFile, getTokenHoldings, sendBackBalance} from "./utils.ts";
 import {confirmTransfer} from "./db.ts";
 import {bot} from "./index.ts";
 import {PublicKey} from "@solana/web3.js";
@@ -54,9 +54,11 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                 };
 
                 const holdings = await getTokenHoldings(transfer_info.source, ENV.TOKEN_ADDRESS);
+                const staked = await checkStakedBalance(transfer_info.source);
                 
-                const tokens_required_remaining = (ENV.TOTAL_SUPPLY * ENV.REQUIRED_HOLDINGS_PERCENT) / 100 - holdings;
-                const has_holdings = tokens_required_remaining <= 0;
+                
+                const tokens_required_remaining = (ENV.TOTAL_SUPPLY * ENV.REQUIRED_HOLDINGS_PERCENT) / 100 - (holdings>staked?holdings:staked);
+                const has_holdings = tokens_required_remaining <= 0
 
                 const [confirmed,returnFunds, isUniqueWallet] = await confirmTransfer(transfer_info)
                 if (!confirmed || !has_holdings || !isUniqueWallet) {

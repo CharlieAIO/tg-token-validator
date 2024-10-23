@@ -9,7 +9,8 @@ import {
     SystemProgram,
     Transaction
 } from "@solana/web3.js";
-import {AccountLayout, getAssociatedTokenAddress, getMint,} from "@solana/spl-token";
+import {getAssociatedTokenAddress, getMint,} from "@solana/spl-token";
+import axios from "axios";
 
 
 const MAX_RETRIES = 3;
@@ -160,3 +161,33 @@ export async function sendBackBalance(transfer_info: any): Promise<string | null
 
     return null;
 }
+
+export async function checkStakedBalance(wallet:string) {
+    try {
+        const response = await axios({
+            method: 'POST',
+            url: `https://rest-api.hellomoon.io/v0/hello-moon/idle-games`,
+            data:JSON.stringify({
+                "game": "ponke-game",
+                "action": "ponke-get-total-staked-from-wallet",
+                "data": {
+                    "walletAddress": wallet
+                }
+            }),
+            headers:{
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.HELLO_MOON_API_KEY}`
+            }
+        });
+        if (!response.data.data) {
+            return 0;
+        }
+        
+        return parseFloat(response.data.data.amount);
+        
+    } catch (e) {
+        console.error("Error fetching staked balance:", e);
+        return 0;
+    }
+}
+
