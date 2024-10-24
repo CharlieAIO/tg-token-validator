@@ -56,7 +56,9 @@ This bot will help determine if you hold enough ${ENV.TOKEN_SYMBOL} tokens to jo
 Always verify you are using the correct Telegram handle, and never send tokens or private information to any third-party accounts.
 
 *Here’s how it works:*
+
 1️⃣ Make sure you have at least ${hold_amount} ${ENV.TOKEN_SYMBOL} tokens in your whale wallet.
+⚠️ If you have staked your ${ENV.TOKEN_SYMBOL}, you can use the wallet you staked with and the staked tokens will count. ⚠️
 2️⃣ Click the start button below to recieve your unique wallet address for this verification.
 3️⃣ Send 0.01 SOL to this unique wallet address from your whale wallet.
 
@@ -111,7 +113,7 @@ bot.on('callback_query', async (callbackQuery) => {
         const lamports = Math.floor(sendAmount * LAMPORTS_PER_SOL);
         const walletData = await generateKeypairToFile(ENV.TOKEN_ADDRESS, chatId);
 
-        let message = `Please send ${sendAmount.toFixed(2)} *SOL* to \`${walletData.wallet}\``;
+        let message = `Please send ${sendAmount.toFixed(2)} *SOL* to \`${walletData.wallet}\` (This will be refunded.)`;
         
         const result = await pool.query(`INSERT INTO "transfers" (chatId,userId,mint,destination,amount) VALUES ($1,$2,$3,$4,$5)`, [
             chatId,
