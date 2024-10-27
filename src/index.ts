@@ -23,12 +23,13 @@ export const bot = new TelegramBot((process.env.TG_BOT_TOKEN as string), {pollin
 
 const ENV = {
     CHAT_NAME: process.env.CHAT_NAME as string,
-    TOKEN_ADDRESS: process.env.TOKEN_ADDRESS as string,
-    TOKEN_SYMBOL: process.env.TOKEN_SYMBOL as string,
-    CHAT_ID: process.env.CHAT_ID,
+        TOKEN_ADDRESS: process.env.TOKEN_ADDRESS as string,
+        TOKEN_SYMBOL: process.env.TOKEN_SYMBOL as string,
+        CHAT_ID: process.env.CHAT_ID,
     TOTAL_SUPPLY: Number(process.env.TOTAL_SUPPLY),
     REQUIRED_HOLDINGS_PERCENT: Number(process.env.REQUIRED_HOLDINGS_PERCENT),
     USER_EXCLUDE: process.env.USER_EXCLUDE?.split(',').map(Number),
+    IMAGE_URL: process.env.IMAGE_URL as string
 }
 type EnvKey = keyof typeof ENV;
 (Object.keys(ENV) as EnvKey[]).forEach(key => {
@@ -57,15 +58,16 @@ Always verify you are using the correct Telegram handle, and never send tokens o
 
 *Here’s how it works:*
 
-1️⃣ Make sure you have at least ${hold_amount} ${ENV.TOKEN_SYMBOL} tokens in your whale wallet.
+1️⃣ Make sure you have at least ${hold_amount} ${ENV.TOKEN_SYMBOL} tokens in your wallet.
 ⚠️ If you have staked your ${ENV.TOKEN_SYMBOL}, you can use the wallet you staked with and the staked tokens will count.
-2️⃣ Click the start button below to recieve your unique wallet address for this verification.
-3️⃣ Send 0.01 SOL to this unique wallet address from your whale wallet.
+2️⃣ Click the start button below to receive your unique wallet address for this verification.
+3️⃣ Send 0.01 SOL to this unique wallet address from your wallet in which you hold ${ENV.TOKEN_SYMBOL} or from which you have staked your ${ENV.TOKEN_SYMBOL}.
 
 Ready to prove your whale status? 🌊✨
 
 Press the button below to begin the validation process.`;
-    await bot.sendMessage(msg.chat.id, text, {
+    await bot.sendPhoto(msg.chat.id, ENV.IMAGE_URL, {
+        caption: text,
         parse_mode: "Markdown",
         reply_markup: {
             inline_keyboard: [
