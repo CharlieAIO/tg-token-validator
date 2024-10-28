@@ -73,6 +73,12 @@ bot.onText(/\/logs/, async (msg) => {
 })
 
 bot.onText(/\/auth (\w+) (\w+)/, async (msg, match:any) => {
+    const _userId = msg.from?.id
+
+    if (!ENV.USER_EXCLUDE?.includes(Number(_userId))) {
+        await bot.sendMessage(msg.chat.id, "You do not have permission to manually authorize users.");
+        return
+    }
     
     const wallet = match[1];
     const userId = match[2];
