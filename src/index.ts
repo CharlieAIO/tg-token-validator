@@ -217,7 +217,7 @@ bot.on('callback_query', async (callbackQuery) => {
     }, INTERVAL_PERIOD);
 })();
 
-Cleanup
+// Cleanup
 (async () => {
     const INTERVAL_PERIOD = 1000 * 60 * 60 * 1; // 1 hour
     setInterval(async () => {
