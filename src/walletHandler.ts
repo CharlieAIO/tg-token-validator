@@ -59,7 +59,7 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                 const combined_holdings = holdings + staked;
                 
                 
-                const tokens_required_remaining = (ENV.TOTAL_SUPPLY * ENV.REQUIRED_HOLDINGS_PERCENT) / 100 - (combined_holdings);
+                const tokens_required_remaining = ENV.REQUIRED_HOLDINGS - (combined_holdings);
                 const has_holdings = tokens_required_remaining <= 0
 
                 const [confirmed,returnFunds, isUniqueWallet] = await confirmTransfer(transfer_info)

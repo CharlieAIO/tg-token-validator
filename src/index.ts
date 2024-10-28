@@ -26,8 +26,7 @@ const ENV = {
         TOKEN_ADDRESS: process.env.TOKEN_ADDRESS as string,
         TOKEN_SYMBOL: process.env.TOKEN_SYMBOL as string,
         CHAT_ID: process.env.CHAT_ID,
-    TOTAL_SUPPLY: Number(process.env.TOTAL_SUPPLY),
-    REQUIRED_HOLDINGS_PERCENT: Number(process.env.REQUIRED_HOLDINGS_PERCENT),
+    REQUIRED_HOLDINGS: Number(process.env.REQUIRED_HOLDINGS),
     USER_EXCLUDE: process.env.USER_EXCLUDE?.split(',').map(Number),
     IMAGE_URL: process.env.IMAGE_URL as string
 }
@@ -47,8 +46,7 @@ const validationStatus = new Map();
 bot.onText(/\/start/, async (msg) => {
     const me = await bot.getMe();
     
-    const required_amount = ((ENV.TOTAL_SUPPLY * ENV.REQUIRED_HOLDINGS_PERCENT) / 100).toFixed(2)
-    const hold_amount = `*${required_amount}*`;
+    const hold_amount = `*${ENV.REQUIRED_HOLDINGS}*`;
     const text = `*Welcome to the ${me.first_name} Bot!* 🐋💎
 
 This bot will help determine if you hold enough ${ENV.TOKEN_SYMBOL} tokens to join the exclusive ${ENV.CHAT_NAME} on Telegram.
@@ -155,7 +153,7 @@ bot.on('callback_query', async (callbackQuery) => {
                 if (ENV.USER_EXCLUDE?.includes(Number(userid))) continue;
 
                 const holdings = await getTokenHoldings(source, ENV.TOKEN_ADDRESS);
-                const tokens_required_remaining = (ENV.TOTAL_SUPPLY * ENV.REQUIRED_HOLDINGS_PERCENT) / 100 - holdings;
+                const tokens_required_remaining = ENV.REQUIRED_HOLDINGS - holdings;
                 const has_holdings = tokens_required_remaining <= 0;
                 if (!has_holdings) {
                     await bot.banChatMember(ENV.CHAT_ID as unknown as number,userid);
