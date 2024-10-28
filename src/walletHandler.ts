@@ -1,6 +1,6 @@
 import {checkStakedBalance, connection, deleteKeypairFile, getTokenHoldings, sendBackBalance} from "./utils.ts";
 import {confirmTransfer} from "./db.ts";
-import {bot} from "./index.ts";
+import {addLogsToQueue, bot} from "./index.ts";
 import {PublicKey} from "@solana/web3.js";
 
 const success_message = (invite:string) => `*Access to the Whale Club has been granted!*\nYou can join the channel [*here*](${invite}) (INVITE WILL EXPIRE IN 1 HOUR)`;
@@ -65,6 +65,7 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                 const [confirmed,returnFunds, isUniqueWallet] = await confirmTransfer(transfer_info)
                 if (!confirmed || !has_holdings || !isUniqueWallet) {
                     if (!isUniqueWallet) {
+                        addLogsToQueue(`User: ${userId} attempted to verify a wallet that has already been verified.`)
                         await bot.sendMessage(chatId, "This wallet has already been verified by another user. Please choose a different wallet.")
                     } else {
                         await bot.sendMessage(chatId, returnFunds?failed_message(tokens_required_remaining.toFixed(2), ENV.CHAT_NAME):"Access Denied.")
@@ -73,6 +74,7 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                 } else if (has_holdings){
                     const oneHourFromNow = new Date(Date.now() + 3600000);
                     try {
+                        addLogsToQueue(`User: ${userId} granting access to chat`)
                         await bot.unbanChatMember(ENV.CHAT_ID, userId, {only_if_banned:true})
                         const chatInvite = await bot.createChatInviteLink(ENV.CHAT_ID, {
                             member_limit: 1,
@@ -80,6 +82,8 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                         });
                         await bot.sendMessage(chatId, success_message(chatInvite.invite_link), {parse_mode:"Markdown"})
                     } catch {
+                        addLogsToQueue(`User: ${userId} error creating chat invite link`)
+
                         await bot.sendMessage(chatId, "Error creating chat invite link, please contact an admin for assistance.")
                     }
 
@@ -92,6 +96,8 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                         await bot.sendMessage(chatId, `*Your refund has been issued!*\nhttps://solscan.io/tx/${returnSig}`,{parse_mode:"Markdown"})
                         deleteKeypairFile(chatId)
                     } else {
+                        addLogsToQueue(`User: ${userId} error sending back tokens`)
+
                         await bot.sendMessage(chatId, "Error sending tokens back, please try again.")
                     }
                 }
@@ -101,9 +107,12 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
             }
         }
 
+        addLogsToQueue(`User: ${userId} invalid transaction, doesnt contain a token transfer.`)
         await bot.sendMessage(chatId, "Invalid transaction, doesnt contain a token transfer. Please start over...", {parse_mode:"Markdown"})
         return
     }catch (e) {
+        addLogsToQueue(`User: ${userId} error processing transaction: ${e}`)
+
         console.error("Error parsing transaction:", e);
         return null
     }

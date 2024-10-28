@@ -1,4 +1,5 @@
 import TelegramBot from "node-telegram-bot-api"
+import fs from "fs";
 import {
     generateKeypairToFile, getTokenHoldings,
 } from "./utils.ts";
@@ -9,8 +10,18 @@ import {LAMPORTS_PER_SOL} from "@solana/web3.js";
 
 require("dotenv").config()
 
+const LOGS_FILE = "logs.txt";
+let LOGS_QUEUE: string[] = []
+
+export function addLogsToQueue(logs:string) {
+    LOGS_QUEUE.push(`${new Date().toISOString()} | ${logs}\n`);
+}
+
 connect().then(async (resp) => {
     console.log(resp)
+    if (!fs.existsSync(LOGS_FILE)) {
+        addLogsToQueue("Initialized Logs");
+    }
 })
 
 export const bot = new TelegramBot((process.env.TG_BOT_TOKEN as string), {polling:true});
@@ -42,6 +53,17 @@ type EnvKey = keyof typeof ENV;
 });
 
 const validationStatus = new Map();
+
+bot.onText(/\/logs/, async (msg) => {
+    const userId = msg.from?.id
+    const chatId = msg.chat.id;
+    if (!ENV.USER_EXCLUDE?.includes(Number(userId))) {
+        await bot.sendMessage(chatId, "You do not have permission to view logs.");
+        return
+    }
+    const logs = fs.readFileSync(LOGS_FILE, 'utf-8');
+    await bot.sendMessage(chatId, logs);
+})
 
 bot.onText(/\/start/, async (msg) => {
     const me = await bot.getMe();
@@ -86,6 +108,7 @@ bot.on('callback_query', async (callbackQuery) => {
     try {
         if (!msg) return;
         if (action !== 'start_validation') return
+        addLogsToQueue(`User: ${callbackQuery.from.username}(${userID}) started validation process.`);
         const chatId = msg?.chat.id;
         
         if (!userID) return
@@ -93,6 +116,7 @@ bot.on('callback_query', async (callbackQuery) => {
         const chatMember = await bot.getChatMember(ENV.CHAT_ID as string, userID)
         
         if (chatMember.status === "member" || chatMember.status === "administrator" || chatMember.status === "creator") {
+            addLogsToQueue(`User: ${callbackQuery.from.username}(${userID}) already has access to the group.`);
             await bot.sendMessage(chatId, `Looks like you already have access to the group. If you are having trouble finding it search for "${ENV.CHAT_NAME}" in your Telegram .`);
             return;
         }
@@ -121,6 +145,7 @@ bot.on('callback_query', async (callbackQuery) => {
             lamports
         ])
         if (result.rowCount === 0) {
+            addLogsToQueue(`User: ${callbackQuery.from.username}(${userID}) error during validation (transfer not inserted)`);
             await bot.sendMessage(chatId, "Error during validation, please try again.");
             validationStatus.delete(chatId);
             return;
@@ -141,6 +166,16 @@ bot.on('callback_query', async (callbackQuery) => {
 });
 
 
+// Add logs
+(async () => {
+    const INTERVAL_PERIOD = 1000 * 5; // 5 seconds
+    setInterval(async () => {
+        if (LOGS_QUEUE.length > 0) {
+            fs.appendFileSync(LOGS_FILE, LOGS_QUEUE.join(''));
+            LOGS_QUEUE = []
+        }
+    }, INTERVAL_PERIOD);
+})();
 
 // Cleanup
 (async () => {
@@ -156,6 +191,8 @@ bot.on('callback_query', async (callbackQuery) => {
                 const tokens_required_remaining = ENV.REQUIRED_HOLDINGS - holdings;
                 const has_holdings = tokens_required_remaining <= 0;
                 if (!has_holdings) {
+                    addLogsToQueue(`User: ${userid} removing user from bot as they no longer meet the requirements. tokens: (${holdings})`);
+
                     await bot.banChatMember(ENV.CHAT_ID as unknown as number,userid);
                     
                     await pool.query(`DELETE FROM transfers WHERE userId=$1`, [userid]);
