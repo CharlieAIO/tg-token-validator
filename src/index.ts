@@ -218,33 +218,33 @@ bot.on('callback_query', async (callbackQuery) => {
 })();
 
 // Cleanup
-(async () => {
-    const INTERVAL_PERIOD = 1000 * 60 * 60 * 1; // 1 hour
-    setInterval(async () => {
-        const { rows } = await pool.query(`SELECT userId,source,mint FROM transfers WHERE confirmed=TRUE AND mint=$1`, [ENV.TOKEN_ADDRESS]);
-        for (const row of rows) {
-            try {
-                const { userid, source } = row;
-                if (ENV.USER_EXCLUDE?.includes(Number(userid))) continue;
-
-                const holdings = await getTokenHoldings(source, ENV.TOKEN_ADDRESS);
-                const staked = await checkStakedBalance(source);
-                const combined_holdings = holdings + staked;
-
-                const tokens_required_remaining = ENV.REQUIRED_HOLDINGS - combined_holdings;
-                const has_holdings = tokens_required_remaining <= 0;
-                if (!has_holdings) {
-                    addLogsToQueue(`User: ${userid} removing user from bot as they no longer meet the requirements. tokens: (${holdings})`);
-
-                    await bot.banChatMember(ENV.CHAT_ID as unknown as number,userid);
-                    
-                    await pool.query(`DELETE FROM transfers WHERE userId=$1`, [userid]);
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        
-        }
-    }, INTERVAL_PERIOD);
-    
-})();
+// (async () => {
+//     const INTERVAL_PERIOD = 1000 * 60 * 60 * 1; // 1 hour
+//     setInterval(async () => {
+//         const { rows } = await pool.query(`SELECT userId,source,mint FROM transfers WHERE confirmed=TRUE AND mint=$1`, [ENV.TOKEN_ADDRESS]);
+//         for (const row of rows) {
+//             try {
+//                 const { userid, source } = row;
+//                 if (ENV.USER_EXCLUDE?.includes(Number(userid))) continue;
+//
+//                 const holdings = await getTokenHoldings(source, ENV.TOKEN_ADDRESS);
+//                 const staked = await checkStakedBalance(source);
+//                 const combined_holdings = holdings + staked;
+//
+//                 const tokens_required_remaining = ENV.REQUIRED_HOLDINGS - combined_holdings;
+//                 const has_holdings = tokens_required_remaining <= 0;
+//                 if (!has_holdings) {
+//                     addLogsToQueue(`User: ${userid} removing user from bot as they no longer meet the requirements. tokens: (${holdings})`);
+//
+//                     await bot.banChatMember(ENV.CHAT_ID as unknown as number,userid);
+//                    
+//                     await pool.query(`DELETE FROM transfers WHERE userId=$1`, [userid]);
+//                 }
+//             } catch (e) {
+//                 console.error(e);
+//             }
+//        
+//         }
+//     }, INTERVAL_PERIOD);
+//    
+// })();
