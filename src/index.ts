@@ -1,6 +1,7 @@
 import TelegramBot from "node-telegram-bot-api"
 import fs from "fs";
 import {
+    checkStakedBalance,
     generateKeypairToFile, getTokenHoldings,
 } from "./utils.ts";
 import { connect,pool } from "./db.ts";
@@ -62,7 +63,9 @@ bot.onText(/\/logs/, async (msg) => {
         return
     }
     const logs = fs.readFileSync(LOGS_FILE, 'utf-8');
-    await bot.sendMessage(chatId, logs);
+    await bot.sendDocument(chatId, Buffer.from(logs), {
+        caption: "Logs"
+    },{filename: "logs.txt"});
 })
 
 bot.onText(/\/start/, async (msg) => {
@@ -188,7 +191,10 @@ bot.on('callback_query', async (callbackQuery) => {
                 if (ENV.USER_EXCLUDE?.includes(Number(userid))) continue;
 
                 const holdings = await getTokenHoldings(source, ENV.TOKEN_ADDRESS);
-                const tokens_required_remaining = ENV.REQUIRED_HOLDINGS - holdings;
+                const staked = await checkStakedBalance(source);
+                const combined_holdings = holdings + staked;
+
+                const tokens_required_remaining = ENV.REQUIRED_HOLDINGS - combined_holdings;
                 const has_holdings = tokens_required_remaining <= 0;
                 if (!has_holdings) {
                     addLogsToQueue(`User: ${userid} removing user from bot as they no longer meet the requirements. tokens: (${holdings})`);
