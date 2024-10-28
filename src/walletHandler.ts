@@ -65,7 +65,7 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                 const [confirmed,returnFunds, isUniqueWallet] = await confirmTransfer(transfer_info)
                 if (!confirmed || !has_holdings || !isUniqueWallet) {
                     if (!isUniqueWallet) {
-                        await bot.sendMessage(chatId, "Wallet belongs to another user")
+                        await bot.sendMessage(chatId, "This wallet has already been verified by another user. Please choose a different wallet.")
                     } else {
                         await bot.sendMessage(chatId, returnFunds?failed_message(tokens_required_remaining.toFixed(2), ENV.CHAT_NAME):"Access Denied.")
                     }

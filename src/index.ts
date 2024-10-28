@@ -82,7 +82,6 @@ Press the button below to begin the validation process.`;
 
 
 bot.on('callback_query', async (callbackQuery) => {
-    console.log(callbackQuery)
     const action = callbackQuery.data;
     const userID = callbackQuery.from.id;
     const msg = callbackQuery.message;
@@ -96,7 +95,7 @@ bot.on('callback_query', async (callbackQuery) => {
         const chatMember = await bot.getChatMember(ENV.CHAT_ID as string, userID)
         
         if (chatMember.status === "member" || chatMember.status === "administrator" || chatMember.status === "creator") {
-            await bot.sendMessage(chatId, "You are already have access. Ending validation process.");
+            await bot.sendMessage(chatId, `Looks like you already have access to the group. If you are having trouble finding it search for "${ENV.CHAT_NAME}" in your Telegram .`);
             return;
         }
 
