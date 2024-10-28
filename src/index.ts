@@ -72,6 +72,33 @@ bot.onText(/\/logs/, async (msg) => {
     },{filename: "logs.txt"});
 })
 
+bot.onText(/\/auth (\w+) (\w+)/, async (msg, match:any) => {
+    
+    const wallet = match[1];
+    const userId = match[2];
+
+    const result = await pool.query(`INSERT INTO "transfers" (chatId,userId,mint,source,confirmed,destination) VALUES ($1,$2,$3,$4,$5,$6)`, [
+        -1,
+        userId,
+        ENV.TOKEN_ADDRESS,
+        wallet,
+        true,
+        "MANUAL"
+    ])
+    if (result.rowCount === 0) {
+        await bot.sendMessage(msg.chat.id, "Error during manual auth, please try again.");
+        return;
+    }
+    const oneHourFromNow = new Date(Date.now() + (3600000 * 12));
+    const chatInvite = await bot.createChatInviteLink(ENV.CHAT_ID as string, {
+        member_limit: 1,
+        expire_date: oneHourFromNow.getTime()
+    });
+    
+    
+    await bot.sendMessage(msg.chat.id, `User has been manually validated. Please provide them with this link ${chatInvite.invite_link} (it will expire in 12 hours)`);
+});
+
 bot.onText(/\/start/, async (msg) => {
     const me = await bot.getMe();
     
