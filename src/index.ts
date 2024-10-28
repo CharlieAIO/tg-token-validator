@@ -62,6 +62,10 @@ bot.onText(/\/logs/, async (msg) => {
         await bot.sendMessage(chatId, "You do not have permission to view logs.");
         return
     }
+    if (!fs.existsSync(LOGS_FILE)) {
+        await bot.sendMessage(chatId, "No logs available.");
+        return
+    }
     const logs = fs.readFileSync(LOGS_FILE, 'utf-8');
     await bot.sendDocument(chatId, Buffer.from(logs), {
         caption: "Logs"
