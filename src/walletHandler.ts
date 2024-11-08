@@ -81,8 +81,8 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                             expire_date: oneHourFromNow.getTime()
                         });
                         await bot.sendMessage(chatId, success_message(chatInvite.invite_link), {parse_mode:"Markdown"})
-                    } catch {
-                        addLogsToQueue(`User: ${userId} error creating chat invite link`)
+                    } catch (e){
+                        addLogsToQueue(`User: ${userId} error creating chat invite link ${e.toString()}`)
 
                         await bot.sendMessage(chatId, "Error creating chat invite link, please contact an admin for assistance.")
                     }
