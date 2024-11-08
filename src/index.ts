@@ -55,22 +55,6 @@ type EnvKey = keyof typeof ENV;
 
 const validationStatus = new Map();
 
-bot.onText(/\/logs/, async (msg) => {
-    const userId = msg.from?.id
-    const chatId = msg.chat.id;
-    if (!ENV.USER_EXCLUDE?.includes(Number(userId))) {
-        await bot.sendMessage(chatId, "You do not have permission to view logs.");
-        return
-    }
-    if (!fs.existsSync(LOGS_FILE)) {
-        await bot.sendMessage(chatId, "No logs available.");
-        return
-    }
-    const logs = fs.readFileSync(LOGS_FILE, 'utf-8');
-    await bot.sendDocument(chatId, Buffer.from(logs), {
-        caption: "Logs"
-    },{filename: "logs.txt"});
-})
 
 bot.onText(/\/auth (\w+) (\w+)/, async (msg, match:any) => {
     const _userId = msg.from?.id
