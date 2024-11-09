@@ -72,13 +72,13 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                     }
                     
                 } else if (has_holdings){
-                    const oneHourFromNow = Math.floor(Date.now() / 1000) + 3600;
+                    const oneHourFromNow = new Date(Date.now() + 3600000);
                     try {
                         addLogsToQueue(`User: ${userId} granting access to chat`)
                         await bot.unbanChatMember(ENV.CHAT_ID, userId, {only_if_banned:true})
                         const chatInvite = await bot.createChatInviteLink(ENV.CHAT_ID, {
                             member_limit: 1,
-                            expire_date: oneHourFromNow.getTime()
+                            expire_date: parseInt(String(oneHourFromNow.getTime() / 1000))
                         });
                         await bot.sendMessage(chatId, success_message(chatInvite.invite_link), {parse_mode:"Markdown"})
                     } catch (e){
