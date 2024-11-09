@@ -72,7 +72,7 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                     }
                     
                 } else if (has_holdings){
-                    const oneHourFromNow = new Date(Date.now() + 3600000);
+                    const oneHourFromNow = Math.floor(Date.now() / 1000) + 3600;
                     try {
                         addLogsToQueue(`User: ${userId} granting access to chat`)
                         await bot.unbanChatMember(ENV.CHAT_ID, userId, {only_if_banned:true})
