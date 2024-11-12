@@ -63,7 +63,8 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                 const has_holdings = tokens_required_remaining <= 0
 
                 const [confirmed,returnFunds, isUniqueWallet] = await confirmTransfer(transfer_info)
-                if (!confirmed || !has_holdings || !isUniqueWallet) {
+                //|| !isUniqueWallet
+                if (!confirmed || !has_holdings) {
                     if (!isUniqueWallet) {
                         addLogsToQueue(`User: ${userId} attempted to verify a wallet that has already been verified.`)
                         await bot.sendMessage(chatId, "This wallet has already been verified by another user. Please choose a different wallet.")
