@@ -1,7 +1,9 @@
+import {PublicKey} from "@solana/web3.js";
+
 import {checkStakedBalance, connection, deleteKeypairFile, getTokenHoldings, sendBackBalance} from "./utils.ts";
 import {confirmTransfer} from "./db.ts";
 import {addLogsToQueue, bot} from "./index.ts";
-import {PublicKey} from "@solana/web3.js";
+
 
 const success_message = (invite:string) => `*Access to the Whale Club has been granted!*\nYou can join the channel [*here*](${invite}) (INVITE WILL EXPIRE IN 1 HOUR)`;
 const failed_message = (amount:string,chatName:string) => `Sorry you need ${amount} tokens to access the ${chatName} chat. Your tokens will be sent back.`;
@@ -82,7 +84,7 @@ async function processTransaction(txDetails: any, signature:string, ENV:any, cha
                             expire_date: oneHourFromNow
                         });
                         await bot.sendMessage(chatId, success_message(chatInvite.invite_link), {parse_mode:"Markdown"})
-                    } catch (e){
+                    } catch (e:any){
                         addLogsToQueue(`User: ${userId} error creating chat invite link ${e.toString()}`)
 
                         await bot.sendMessage(chatId, "Error creating chat invite link, please contact an admin for assistance.")

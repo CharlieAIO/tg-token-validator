@@ -1,12 +1,13 @@
 import TelegramBot from "node-telegram-bot-api"
+import cron from "node-cron";
 import fs from "fs";
-import {
-    checkStakedBalance,
-    generateKeypairToFile, getTokenHoldings,
-} from "./utils.ts";
-import { connect,pool } from "./db.ts";
-import {watchWallet} from "./walletHandler.ts";
 import {LAMPORTS_PER_SOL} from "@solana/web3.js";
+
+import {
+    generateKeypairToFile
+} from "./utils.ts";
+import {connect, databaseCheck, pool} from "./db.ts";
+import {watchWallet} from "./walletHandler.ts";
 
 
 require("dotenv").config()
@@ -25,13 +26,10 @@ connect().then(async (resp) => {
     }
 })
 
-export const bot = new TelegramBot((process.env.TG_BOT_TOKEN as string), {polling:true});
+cron.schedule("0 * * * *", databaseCheck);
+cron.schedule("*/15 * * * * *", updateLogs);
 
-// Use this to retrieve the chat id of a group.
-// bot.onText(/\/ping/, async (msg) => {
-//     console.log(msg.chat.id)
-//     await bot.sendMessage(msg.chat.id, "Pong!")
-// })
+export const bot = new TelegramBot((process.env.TG_BOT_TOKEN as string), {polling:true});
 
 const ENV = {
     CHAT_NAME: process.env.CHAT_NAME as string,
@@ -190,54 +188,9 @@ bot.on('callback_query', async (callbackQuery) => {
 });
 
 
-// Add logs
-(async () => {
-    const INTERVAL_PERIOD = 1000 * 5; // 5 seconds
-    setInterval(async () => {
-        if (LOGS_QUEUE.length > 0) {
-            fs.appendFileSync(LOGS_FILE, LOGS_QUEUE.join(''));
-            LOGS_QUEUE = []
-        }
-    }, INTERVAL_PERIOD);
-})();
-
-// Cleanup
-(async () => {
-    const INTERVAL_PERIOD = 1000 * 60 * 60 * 1; // 1 hour
-    setInterval(async () => {
-        const { rows } = await pool.query(`SELECT userId,source,mint FROM transfers WHERE confirmed=TRUE AND mint=$1`, [ENV.TOKEN_ADDRESS]);
-        for (const row of rows) {
-            try {
-                const { userid, source } = row;
-                if (ENV.USER_EXCLUDE?.includes(Number(userid))) continue;
-
-                const holdings = await getTokenHoldings(source, ENV.TOKEN_ADDRESS);
-                const staked = await checkStakedBalance(source);
-                const combined_holdings = holdings + staked;
-
-                const tokens_required_remaining = ENV.REQUIRED_HOLDINGS - combined_holdings;
-                const has_holdings = tokens_required_remaining <= 0;
-                if (!has_holdings) {
-                    console.log({
-                        userid,
-                        source,
-                        holdings,
-                        staked,
-                        combined_holdings,
-                        tokens_required_remaining,
-                        has_holdings
-                    })
-                    // addLogsToQueue(`User: ${userid} removing user from bot as they no longer meet the requirements. tokens: (${holdings})`);
-
-                    // await bot.banChatMember(ENV.CHAT_ID as unknown as number,userid);
-
-                    // await pool.query(`DELETE FROM transfers WHERE userId=$1`, [userid]);
-                }
-            } catch (e) {
-                console.error(e);
-            }
-
-        }
-    }, INTERVAL_PERIOD);
-
-})();
+function updateLogs() {
+    if (LOGS_QUEUE.length > 0) {
+        fs.appendFileSync(LOGS_FILE, LOGS_QUEUE.join(''));
+        LOGS_QUEUE = []
+    }
+}

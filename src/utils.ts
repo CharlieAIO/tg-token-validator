@@ -5,9 +5,8 @@ import {
     Keypair,
     type ParsedAccountData,
     PublicKey,
-    sendAndConfirmTransaction,
     SystemProgram,
-    Transaction
+    Transaction, VersionedTransaction
 } from "@solana/web3.js";
 import {getAssociatedTokenAddress, getMint,} from "@solana/spl-token";
 import axios from "axios";
@@ -111,40 +110,27 @@ export async function sendBackBalance(transfer_info: any): Promise<string | null
             const [senderKeypair] = loadKeypairFromFile(chatId);
             const sourcePK = new PublicKey(source);
 
-            const senderBalance = await connection.getBalance(senderKeypair.publicKey);
+            const senderBalance = await connection.getBalance(senderKeypair.publicKey, "finalized");
 
-            const rentExemptionAmount = await connection.getMinimumBalanceForRentExemption(0);
-
-            const { feeCalculator } = await connection.getRecentBlockhash();
-            const estimatedFee = feeCalculator.lamportsPerSignature;
-
-            const maxTransferAmount = senderBalance - rentExemptionAmount - estimatedFee;
-
-            if (maxTransferAmount <= 0) {
-                return null;
-            }
-            
-            const transferInstruction = SystemProgram.transfer({
-                fromPubkey: senderKeypair.publicKey,
-                toPubkey: sourcePK,
-                lamports: maxTransferAmount
-            });
-
-            const transaction = new Transaction().add(transferInstruction);
-
-            const { blockhash } = await connection.getLatestBlockhash();
-            transaction.recentBlockhash = blockhash;
+            const tempTransaction = new Transaction();
+            tempTransaction.recentBlockhash = (await connection.getLatestBlockhash("finalized")).blockhash;
+            tempTransaction.feePayer = senderKeypair.publicKey;
+            const fee = (await connection.getFeeForMessage(tempTransaction.compileMessage(), "finalized"))?.value || 0;
+            const transferAmount = senderBalance - fee;
+            const transaction = new Transaction().add(
+                SystemProgram.transfer({
+                    fromPubkey: senderKeypair.publicKey,
+                    toPubkey: sourcePK,
+                    lamports: transferAmount,
+                })
+            );
+            transaction.recentBlockhash = (await connection.getLatestBlockhash("finalized")).blockhash;
             transaction.feePayer = senderKeypair.publicKey;
 
-            return await sendAndConfirmTransaction(
-                connection,
-                transaction,
-                [senderKeypair],
-                {
-                    maxRetries: 5,
-                    skipPreflight: true
-                }
-            );
+            const versionedTX = new VersionedTransaction(transaction.compileMessage());
+            versionedTX.sign([senderKeypair])
+
+            return await connection.sendTransaction(versionedTX)
         } catch (e) {
             console.error(`Error sending tokens back (attempt ${retries + 1}):`, e);
 
