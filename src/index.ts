@@ -16,7 +16,7 @@ const LOGS_FILE = "logs.txt";
 let LOGS_QUEUE: string[] = []
 
 export function addLogsToQueue(logs:string) {
-    LOGS_QUEUE.push(`${new Date().toISOString()} | ${logs}\n`);
+    //LOGS_QUEUE.push(`${new Date().toISOString()} | ${logs}\n`);
 }
 
 connect().then(async (resp) => {
@@ -27,7 +27,7 @@ connect().then(async (resp) => {
 })
 
 cron.schedule("0 * * * *", databaseCheck);
-cron.schedule("*/15 * * * * *", updateLogs);
+//cron.schedule("*/15 * * * * *", updateLogs);
 
 export const bot = new TelegramBot((process.env.TG_BOT_TOKEN as string), {polling:true});
 
