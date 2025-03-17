@@ -38,6 +38,7 @@ const ENV = {
         CHAT_ID: process.env.CHAT_ID,
     REQUIRED_HOLDINGS: Number(process.env.REQUIRED_HOLDINGS),
     USER_EXCLUDE: process.env.USER_EXCLUDE?.split(',').map(Number),
+    ADMINS: process.env.ADMINS?.split(','),
     IMAGE_URL: process.env.IMAGE_URL as string
 }
 type EnvKey = keyof typeof ENV;
@@ -85,6 +86,29 @@ bot.onText(/\/auth (\w+) (\w+)/, async (msg, match:any) => {
     
     
     await bot.sendMessage(msg.chat.id, `User has been manually validated. Please provide them with this link ${chatInvite.invite_link} (it will expire in 12 hours)`);
+});
+
+bot.onText(/\/broadcast (.+)/, async (msg, match) => {
+    if(!msg.from?.username) return
+
+    if(!["charlieaio","Yakuzadaddy"].includes(msg.from.username)) {
+        return
+    }
+
+    const chatId = msg.chat.id;
+    let count = 0;
+    if (match) {
+        const text = match[1];
+        const subs = await getSubscriptions();
+        for(const sub of subs) {
+            try {
+                const chatId = sub.chat_id;
+                await bot.sendMessage(chatId, text);
+                count++
+            }catch{}
+        }
+    }
+    await bot.sendMessage(chatId, `Broadcasted message to ${count} users.`);
 });
 
 bot.onText(/\/start/, async (msg) => {
