@@ -153,3 +153,13 @@ export async function databaseCheck(ENV:any) {
 
     }
 }
+
+export async function getDistinctUsers() {
+    try {
+        const res = await pool.query(`SELECT DISTINCT chatid FROM transfers WHERE confirmed=TRUE`);
+        return res.rows;
+    } catch (e) {
+        console.error(`Error getting distinct users: ${e}`);
+        return []
+    }
+}

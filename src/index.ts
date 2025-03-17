@@ -6,7 +6,7 @@ import {LAMPORTS_PER_SOL} from "@solana/web3.js";
 import {
     generateKeypairToFile
 } from "./utils.ts";
-import {connect, databaseCheck, pool} from "./db.ts";
+import {connect, databaseCheck, getDistinctUsers, pool} from "./db.ts";
 import {watchWallet} from "./walletHandler.ts";
 
 
@@ -91,7 +91,7 @@ bot.onText(/\/auth (\w+) (\w+)/, async (msg, match:any) => {
 bot.onText(/\/broadcast (.+)/, async (msg, match) => {
     if(!msg.from?.username) return
 
-    if(!["charlieaio","Yakuzadaddy"].includes(msg.from.username)) {
+    if(!ENV.ADMINS?.includes(msg.from.username)) {
         return
     }
 
@@ -99,10 +99,10 @@ bot.onText(/\/broadcast (.+)/, async (msg, match) => {
     let count = 0;
     if (match) {
         const text = match[1];
-        const subs = await getSubscriptions();
-        for(const sub of subs) {
+        const users = await getDistinctUsers();
+        for(const u of users) {
             try {
-                const chatId = sub.chat_id;
+                const chatId = u.chatid;
                 await bot.sendMessage(chatId, text);
                 count++
             }catch{}
